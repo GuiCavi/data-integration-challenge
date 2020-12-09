@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -62,15 +63,15 @@ func insertValues(database *sql.DB, values [][]string) {
 	for _, s := range values {
 		log.Println(s)
 
-		insertValue(database, s[0], s[1])
+		insertValue(database, strings.ToUpper(s[0]), s[1])
 	}
 }
 
 func main() {
+	database := prepareDatabase()
+
 	// var records [][]string
 	// records = readFile("./files/q1_catalog.csv")
-
-	database := prepareDatabase()
 	// insertValues(database, records[1:])
 
 	rows, _ := database.Query("SELECT * FROM companies")
