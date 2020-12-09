@@ -1,15 +1,20 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/csv"
 	"fmt"
 	"io"
 	"log"
 	"os"
+	"strconv"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
-func main() {
-	file, err := os.Open("./files/q1_catalog.csv")
+func readFile(name string) [][]string {
+	var records [][]string
+	file, err := os.Open(name)
 
 	if err != nil {
 		log.Fatalln("Could not open the csv file!", err)
@@ -32,6 +37,51 @@ func main() {
 			log.Fatal(err)
 		}
 
-		fmt.Printf("%s => %s\n", row[0], row[1])
+		// fmt.Println(records)
+		records = append(records, row)
 	}
+
+	return records
+}
+
+func prepareDatabase() *sql.DB {
+	database, _ := sql.Open("sqlite3", "./yawoen.db")
+
+	statement, _ := database.Prepare("CREATE TABLE IF NOT EXISTS companies (id INTEGER PRIMARY KEY, name TEXT, zip TEXT)")
+	statement.Exec()
+
+	return database
+}
+
+func insertValue(database *sql.DB, companyName string, zipCode string) {
+	statement, _ := database.Prepare("INSERT INTO companies (name, zip) VALUES (?, ?)")
+	statement.Exec(companyName, zipCode)
+}
+
+func insertValues(database *sql.DB, values [][]string) {
+	for _, s := range values {
+		log.Println(s)
+
+		insertValue(database, s[0], s[1])
+	}
+}
+
+func main() {
+	// var records [][]string
+	// records = readFile("./files/q1_catalog.csv")
+
+	database := prepareDatabase()
+	// insertValues(database, records[1:])
+
+	rows, _ := database.Query("SELECT * FROM companies")
+
+	var id int
+	var name string
+	var zip string
+	for rows.Next() {
+		rows.Scan(&id, &name, &zip)
+		fmt.Println(strconv.Itoa(id) + ": " + name + " " + zip)
+	}
+
+	defer database.Close()
 }
